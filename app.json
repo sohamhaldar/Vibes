@@ -4,12 +4,13 @@
     "slug": "Vibe",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "icon": "./assets/Vibes.png",
+    "userInterfaceStyle": "dark",
+    "scheme": "Vibe",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/Vibes.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#0F172A"
     },
     "ios": {
       "supportsTablet": true
@@ -17,11 +18,24 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      }
+        "backgroundColor": "#000"
+      },
+      "softwareKeyboardLayoutMode": "pan",
+      "package": "com.sohamhaldar25.Vibe"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "6c11080b-c8c9-44a5-a7d8-cec134323031"
+      }
     }
   }
 }
