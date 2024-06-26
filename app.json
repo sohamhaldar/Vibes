@@ -17,14 +17,14 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/Vibes.png",
         "backgroundColor": "#000"
       },
       "softwareKeyboardLayoutMode": "pan",
       "package": "com.sohamhaldar25.Vibe"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/Vibes.png"
     },
     "plugins": [
       "expo-router"
