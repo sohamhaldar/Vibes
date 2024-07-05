@@ -1,13 +1,14 @@
 import { View, Text, Image, TouchableOpacity } from 'react-native';
 import React,{useState} from 'react';
-import * as Animatable from 'react-native-animatable';
-import HandlePlay from '../service/demo';
-import { useActiveQueue, useActiveQueueStore } from '../store/queue';
 import {AntDesign} from '@expo/vector-icons';
 import { Menu, MenuItem, MenuDivider } from 'react-native-material-menu';
-import colors from 'tailwindcss/colors';
+import colors, { current } from 'tailwindcss/colors';
+import { Plane,Wave } from 'react-native-animated-spinkit'
+import { baseUrl } from '../constants/base';
+import MovingText from './MovingText';
 
-const SideListItem2 = ({ item,onTrackSelect,onFavClick,IsFav,InPlaylist,PlaylistControls}) => {
+
+const SideListItem2 = ({ item,onTrackSelect,onFavClick,IsFav,InPlaylist,PlaylistControls,isCurrent,isAdded,QueueBtnClicked}) => {
     const [visible, setVisible] = useState(false);
     const hideMenu = () => setVisible(false);
     const showMenu = () => setVisible(true);
@@ -31,6 +32,7 @@ const SideListItem2 = ({ item,onTrackSelect,onFavClick,IsFav,InPlaylist,Playlist
     // }
     
     let author = '';
+    let artistId='';
     let isLoading=true;
     // console.log(item)
     if(item!='-1')isLoading=false
@@ -38,8 +40,9 @@ const SideListItem2 = ({ item,onTrackSelect,onFavClick,IsFav,InPlaylist,Playlist
     if (item) {
         if (Array.isArray(item.artists)) {
             author = item.artists.map(i => i.name).join(', ');
+            artistId = item.artists.map(i => i.id).join(', ');
         } else {
-            author = item.artists?.name || '';
+            author = item?.artist || '';
         }
     }
     const onclick=()=>{
@@ -54,17 +57,52 @@ const SideListItem2 = ({ item,onTrackSelect,onFavClick,IsFav,InPlaylist,Playlist
         hideMenu();
         await PlaylistControls(item);
     }
+    const QueueClicked=async()=>{
+        console.log(item);
+        const song={
+            url:`${baseUrl}/play/${item.videoId||item.youtubeId}`,
+            title:item.title,
+            artist:author,
+            duration:item.duration||item?.duration?.totalSeconds,
+            artwork:item.artwork||item.thumbnailUrl||music,
+            headers:{
+                "range": "bytes=0-"
+            },
+            artistId:artistId,
+            videoId:item.videoId||item.youtubeId
+        }
+        QueueBtnClicked(song,isAdded);
+        hideMenu();
+    }
     
     return (
         <TouchableOpacity onPress={onclick}>
-            <View className="h-24 justify-between items-center top-2 w-full rounded-lg overflow-hidden flex-row">
-                <Image source={{
-                    uri:item.artwork
-                }} className="w-[20%] h-[80%] m-1 mx-2 ml-3 rounded-md" />
+            <View className={`h-24 justify-between items-center top-2 w-full rounded-lg overflow-hidden flex-row ${isCurrent&&'bg-blue-500'}`}>
+                <View className="w-[20%] h-[80%] m-1 mx-2 ml-3 rounded-md relative justify-center items-center">
+                    <Image source={{
+                        uri:item.artwork
+                    }} className="w-full h-full rounded-md" />
+                    <Wave size={48} color={colors.slate[300]} className={`absolute ${isCurrent?'block':'hidden'}`}/>
+                </View>
                 <View className="w-[55%] h-[90%] m-1 ">
-                    <Text ellipsizeMode="tail"
+                    {/* <Text ellipsizeMode="tail"
                     numberOfLines={1}
-                    className="text-slate-50 flex-1 ml-1 truncate mt-2 text-lg">{item.title}</Text>
+                    className="text-slate-50 flex-1 ml-1 truncate mt-2 text-lg">{item.title}</Text> */}
+                    {!isCurrent?(<Text
+                        ellipsizeMode="tail"
+                        numberOfLines={1}
+                        className="text-slate-50 flex-1 ml-1 truncate mt-2 text-lg"
+                    >
+                        {item.title||item?.name}
+                </Text>):
+                (<MovingText animationThreshold={25} style={{
+                                fontSize:15,
+                                marginLeft:4,
+                                marginTop:8,
+                                fontSize:18,
+                                lineHeight:28,
+                                color:colors.slate[50]
+                            }} text={item.title||item.name} spacing={50}/>)}
                     <Text ellipsizeMode="tail"
                     numberOfLines={1}
                     className="text-gray-400/80 mb-2 ml-1 flex-1">{item?.artist}</Text>
@@ -95,10 +133,10 @@ const SideListItem2 = ({ item,onTrackSelect,onFavClick,IsFav,InPlaylist,Playlist
                             <Text className="m-2 text-slate-600 text-sm flex-1" ellipsizeMode="tail" numberOfLines={2}>{!IsFav?"Add To Favourites":"Remove From Favs"}</Text>
                         </View>
                 </MenuItem>
-                <MenuItem onPress={hideMenu}>
+                <MenuItem onPress={QueueClicked}>
                         <View className="flex-row justify-center items-center">
                             <AntDesign name="menu-unfold" size={30} color={colors.slate[600]} /> 
-                            <Text className="m-2 mx-4 text-slate-600">Add To Queue</Text>
+                            <Text className="m-2 mx-4 text-slate-600">{!isAdded?'Add To Queue':'remove from que'}</Text>
                         </View>
                 </MenuItem>
                 <MenuDivider />

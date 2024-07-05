@@ -13,6 +13,8 @@ import { router } from 'expo-router';
 import colors from 'tailwindcss/colors';
 import Spinner from 'react-native-loading-spinner-overlay';
 import Modal from "react-native-modal";
+import PlaylistOptions from '../../../components/PlaylistOptions';
+import { useActiveTrack } from 'react-native-track-player';
 
 const Search = () => {
   const [active,setActive]=useState('songs');
@@ -26,7 +28,7 @@ const Search = () => {
   const [isInitialized,setIsInitialized]=useState(false);
   const [playlistName,setPlaylistName]=useState('');
 
-  const {setActiveQueue,setActiveQueueId}=useActiveQueue();
+  const {setActiveQueue,setActiveQueueId,addToActiveQueue,activeQueue,removeFromActiveQueue}=useActiveQueue();
   const{addToFavouriteQueue,favouriteQueue,removeFromFavouriteQueue,playlistQueue,addToPlaylist}=useQueue();
   const [isModalVisible, setModalVisible] = useState(false);
   const [isSearchModalVisible, setSearchModalVisible] = useState(false);
@@ -42,8 +44,8 @@ const Search = () => {
       router.push({pathname:'Search/Artist',params:{artistId:videoId,artistName:name}})
     }
   }
+  const currentTrack=useActiveTrack();
 
-  // const baseUrl='https://ytmusic-api-h2id.onrender.com';
   const songsPress=async()=>{
     setActive('songs');
     setLoading(true);
@@ -100,6 +102,13 @@ const Search = () => {
     else if(active=='artists'){
       artistsPress();
     }
+  }
+  const onAddToQueue=async(song,isAdded)=>{
+    if(isAdded){
+      await removeFromActiveQueue(song)
+    }else{
+      await addToActiveQueue(song); 
+    }    
   }
 
   const music=data.music;
@@ -190,7 +199,7 @@ const Search = () => {
         <View className="w-[90%] h-[7%] flex-row border-2 top-10">
           <TextInput onChangeText={setSearch}  value={search} placeholder="What's on your mind?" onSubmitEditing={onSubmit} className="bg-slate-50 w-[85%] p-3 px-4 h-full rounded-l-lg"/>
           <View className="bg-slate-500 w-[15%] h-full rounded-r-lg justify-center items-end px-4">
-            <MaterialCommunityIcons name='magnify' size={30} /> 
+            <MaterialCommunityIcons name='magnify' size={30} onPress={onSubmit}/> 
           </View>
         </View>
         <View className="h-[87%]  w-full">
@@ -212,16 +221,25 @@ const Search = () => {
           {!isLoading?(<View className="h-full w-full">
             
             <FlatList
+            
             data={result}
             renderItem={({ item}) => {
               let isFav=false;
+              let isAdded=false;
               favouriteQueue.find((i)=>{
                 if(i.videoId==item.youtubeId||i.videoId==item.videoId){
                   isFav=true
                 }
               })
+              activeQueue.find((i)=>{
+                if(i.videoId==item.youtubeId||i.videoId==item.videoId){
+                  isAdded=true
+                }
+              })
+              let isCurrent=false;
+              isCurrent=currentTrack?.videoId === item.videoId||currentTrack?.videoId === item.youtubeId
               return (
-              <LongListItem item={item} onTrackSelect={handleTrackSelect} onFavClick={onFavClick} type={active} isSearch={true} isFav={isFav} onPlaylistClick={onPlaylistClick}/>
+              <LongListItem item={item} isCurrent={isCurrent} onAddToQueue={onAddToQueue} onTrackSelect={handleTrackSelect} onFavClick={onFavClick} type={active} isSearch={true} isFav={isFav} onPlaylistClick={onPlaylistClick} addedToQueue={isAdded}/>
             )
           }}
             contentContainerStyle={{paddingBottom:140}}
@@ -241,44 +259,15 @@ const Search = () => {
           ):(
             <View className="justify-center items-center w-full h-full -top-36 ">
               <Entypo name="note" size={150} color={colors.slate[600]} />
-              <Text className="text-slate-600 text-2xl m-4">Search something..</Text>
+              <Text className="text-slate-600 text-2xl m-4">Search something...</Text>
             </View>
           )}
           
         </View>
         
       </View>
-      <Modal animationOut={'fadeOut'} isVisible={isModalVisible} className="justify-center flex-1 h-full" onBackButtonPress={()=>setModalVisible(false)} onBackdropPress={()=>setModalVisible(false)}>
-        <View className=" h-[60%] w-full justify-center items-center border-slate-50 bg-gray-700">
-          <View className="h-20 justify-between p-4 item flex-row items-center w-full  border-slate-50">
-            <Text className="text-xl text-slate-50 font-bold">Your Playlists</Text>
-            <TouchableOpacity onPress={()=>setSearchModalVisible(true)}>
-            <Ionicons name="add-circle" size={30} color={colors.sky[500]} />
-            </TouchableOpacity>
-          </View>
-          <View className="h-[80%] w-full">
-            <ScrollView>
-            {
-              playlists.map((item)=>{
-                return <LongListItem key={item.title} item={item} onTrackSelect={onPlaylistSelect} isFav={false} onFavClick={'onPlaylistClick'} type='albums' isSearch={false}/>
-                
-              })
-            }
-            </ScrollView>
-          </View>    
-        </View>
-        <Modal isVisible={isSearchModalVisible} className="justify-center items-center flex-1 h-full w-full" onBackButtonPress={()=>setSearchModalVisible(false)} onBackdropPress={()=>setSearchModalVisible(false)}>
-          <View className=" h-40  justify-center items-center bg-sky-950 w-[80%] mr-8 rounded-xl">
-              
-              <TextInput onChangeText={setPlaylistName}  value={playlistName} placeholder="Enter Playlist Name" onSubmitEditing={'addPlaylists'} className="bg-slate-50 w-[80%] rounded-lg p-4 mt-4 mr-4"/>
-              <TouchableOpacity className="m-4 left-20" onPress={addPlaylists}>
-                  <View className="justify-end items-end bg-blue-600 p-2 px-4 rounded-lg">
-                      <Text className="text-slate-300 ">Add</Text>
-                  </View>
-              </TouchableOpacity>
-          </View>
-        </Modal> 
-      </Modal>
+      
+      <PlaylistOptions track={track} isModalVisible={isModalVisible} setModalVisible={setModalVisible}/> 
         
     </SafeAreaView>
     

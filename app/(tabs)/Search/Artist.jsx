@@ -6,11 +6,13 @@ import colors from 'tailwindcss/colors';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 // import { i2 } from '../../../constants/type';
 import SideListItem2 from '../../../components/sideListItem2';
-import { useQueue } from '../../../store/queue';
+import { useActiveQueue, useQueue } from '../../../store/queue';
 import { baseUrl } from '../../../constants/base';
 import axios from 'axios';
 import { useLocalSearchParams } from 'expo-router';
 import Spinner from 'react-native-loading-spinner-overlay';
+import TrackPlayer, { useActiveTrack } from 'react-native-track-player';
+import PlaylistOptions from '../../../components/PlaylistOptions';
 
 
 const Artist = () => {
@@ -19,10 +21,25 @@ const Artist = () => {
     const [isArtistLoading,setIsArtistLoading]=useState(true);
     const [isLoading,setIsLoading]=useState(true);
     const{favouriteQueue,removeFromFavouriteQueue,addToFavouriteQueue}=useQueue();
+    const {activeQueue,addToActiveQueue,removeFromActiveQueue,setActiveQueue,setActiveQueueId}=useActiveQueue();
     const {artistId,artistName}=useLocalSearchParams();
-    const handleTrackSelect=(videoId)=>{
 
+    const [isModalVisible, setModalVisible] = useState(false);
+    const [track,setTrack]=useState();
+    const handleTrackSelect=async(videoId)=>{
+        console.log('videoId:',videoId);
+        const index=data.findIndex((i)=>i.videoId==videoId);
+        console.log('index:',index);
+        await setActiveQueue(data,index);
+        await setActiveQueueId(`Artist:${artistData.items[0].snippet.title}`);
     }
+    const QueueBtnClicked=async(song,isAdded)=>{
+        if(isAdded){
+          await removeFromActiveQueue(song)
+        }else{
+          await addToActiveQueue(song); 
+        } 
+      }
     const onFavClick=async(item,isFav)=>{
         console.log(item);
         if(isFav){
@@ -31,20 +48,44 @@ const Artist = () => {
           await addToFavouriteQueue(item);
         }
     }
+    const currentTrack=useActiveTrack();
     const findArtistDetails=async()=>{
         setIsArtistLoading(true);
-        
         console.log(artistId);
         const result=await axios.get(`https://yt.lemnoslife.com/noKey/channels?part=snippet%2CcontentDetails&id=${artistId}`);
         setArtistData(result.data);
         setIsArtistLoading(false);
         setIsLoading(true);
         const playlistId=result.data.items[0].contentDetails.relatedPlaylists.uploads;
-        console.log(playlistId);
+        // console.log(playlistId);
         const songs=await axios.get(`https://yt.lemnoslife.com/playlistItems?part=snippet&playlistId=${playlistId}`);
-        setData(songs.data.items);
+        const totalSongs=[];
+        songs.data.items.map((item)=>{
+            const formattedData={
+                artwork:item.snippet.thumbnails[item.snippet.thumbnails.length-1].url,
+                title:item.snippet.title,
+                videoId:item.snippet.resourceId.videoId,
+                artist:artistName||"",
+                url:`${baseUrl}/play/${item.snippet.resourceId.videoId}`,
+                headers:{
+                    "range": "bytes=0-"
+                }
+            }
+            totalSongs.push(formattedData);
+        })
+        setData(totalSongs);
         setIsLoading(false);
     }
+    
+    const onPlaylistClick=(item)=>{
+        setTrack(item);
+        setModalVisible(true);
+      }
+      const playClicked=async()=>{
+        await setActiveQueue(data);
+        await setActiveQueueId(`Artist-${artistName}`);
+    }
+
     useEffect(()=>{
         findArtistDetails();
     },[]);
@@ -59,7 +100,7 @@ const Artist = () => {
                 </View>
                 <View className="absolute justify-between items-end w-full h-full flex-row">
                     <Text className="text-slate-100 text-3xl font-extrabold m-4 w-[70%] flex-1" numberOfLines={1} ellipsizeMode='tail'>{artistData.items[0].snippet.title}</Text>
-                    <TouchableOpacity>
+                    <TouchableOpacity onPress={playClicked}>
                         <Entypo name="controller-play" size={60} color={colors.gray[700]}style={{
                             margin:10
                         }} />
@@ -72,17 +113,19 @@ const Artist = () => {
                 {!isLoading&&data.length!=0?(<FlatList
                 data={data}
                 renderItem={({ item}) =>{
-                    const formattedData={
-                        artwork:item.snippet.thumbnails[item.snippet.thumbnails.length-1].url,
-                        title:item.snippet.title,
-                        videoId:item.snippet.resourceId.videoId,
-                        artist:artistName||"",
-                        url:`${baseUrl}/play/${item.snippet.resourceId.videoId}`,
-                        headers:{
-                            "range": "bytes=0-"
+                    let isAdded=false;
+                    let isFav=false;
+                    activeQueue.find((i)=>{
+                        if(i.videoId==item.youtubeId||i.videoId==item.videoId){
+                          isAdded=true
                         }
-                    }
-                    return(<SideListItem2 item={formattedData} onTrackSelect={handleTrackSelect} onFavClick={onFavClick} InPlaylist={false}/>)
+                      })
+                    favouriteQueue.find((i)=>{
+                        if(i.videoId==item.youtubeId||i.videoId==item.videoId){
+                          isFav=true
+                        }
+                      })
+                    return(<SideListItem2 item={item} onTrackSelect={handleTrackSelect} isCurrent={currentTrack?.videoId==item.videoId?true:false} onFavClick={onFavClick} InPlaylist={false} QueueBtnClicked={QueueBtnClicked} isAdded={isAdded} IsFav={isFav} PlaylistControls={onPlaylistClick} />)
                 }}
                 contentContainerStyle={{paddingBottom:140}}
             />):(<Spinner
@@ -104,7 +147,8 @@ const Artist = () => {
                 textStyle={{
                     color:colors.slate[50]
                 }}
-              />)}    
+              />)}
+              <PlaylistOptions track={track} isModalVisible={isModalVisible} setModalVisible={setModalVisible}/>     
     </SafeAreaView>
   )
 }

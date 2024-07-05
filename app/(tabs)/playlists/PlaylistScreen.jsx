@@ -28,6 +28,10 @@ const PlaylistScreen = () => {
         await setActiveQueueId(`playlist-${playlistId}`);
 
     }
+    const playClicked=async()=>{
+        await setActiveQueue(playlistItems);
+        await setActiveQueueId(`playlist-${playlistId}`);
+    }
     const onFavClick=async(item,isFav)=>{
         console.log(item);
         if(isFav){
@@ -51,14 +55,12 @@ const PlaylistScreen = () => {
     <SafeAreaView className="flex-1 bg-slate-900 justify-center items-center">
         {!isLoading?(<View className="flex-1 bg-slate-900 w-full h-full justify-center items-center">
             <View className="w-full h-[30%]">
-                <Image source={{
-                    uri:playlistItems[0].artwork
-                }} className="w-full h-full"/>
+                <Image source={playlistItems[0]?.artwork ? { uri: playlistItems[0]?.artwork } : music} className="w-full h-full"/>
                 <View className="absolute justify-end items-start w-full h-full bg-slate-500 opacity-40">   
                 </View>
                 <View className="absolute justify-between items-end w-full h-full flex-row">
                     <Text className="text-slate-100 text-3xl font-extrabold m-4 w-[70%] flex-1" numberOfLines={1} ellipsizeMode='tail'>{playlistId}</Text>
-                    <TouchableOpacity>
+                    <TouchableOpacity onPress={playClicked}>
                         <Entypo name="controller-play" size={60} color={colors.gray[700]}style={{
                             margin:10
                         }} />
@@ -67,6 +69,11 @@ const PlaylistScreen = () => {
             </View>
             <View className="h-[70%] w-full">
                 <Text className="text-slate-50 text-xl m-4">Songs</Text>
+                {
+                playlistItems.length==0&&(<View className="h-full w-full justify-center items-center -top-20">
+                    <Text className="text-slate-300 text-xl">No Songs Available</Text>
+                </View>)
+                }
 
                 <FlatList
                 data={playlistItems}
@@ -82,6 +89,7 @@ const PlaylistScreen = () => {
                 contentContainerStyle={{paddingBottom:140}}
             />
             </View>
+            
         </View>):<Text>'Loading...'</Text>}
     </SafeAreaView>
   )

@@ -1,6 +1,7 @@
 import { View, Text } from 'react-native'
 import React from 'react';
-import TrackPlayer,{Event, RepeatMode, Capability} from 'react-native-track-player';
+import TrackPlayer,{Event, RepeatMode, Capability,AppKilledPlaybackBehavior} from 'react-native-track-player';
+
 
 export const setUpPlayer=async()=>{
   let isSetup=false;
@@ -11,6 +12,12 @@ export const setUpPlayer=async()=>{
     console.log("Entered")
     await TrackPlayer.setupPlayer();
     await TrackPlayer.updateOptions({
+      android:{
+        appKilledPlaybackBehavior:AppKilledPlaybackBehavior.StopPlaybackAndRemoveNotification,
+        alwaysPauseOnInterruption:true
+        
+      },
+      
       capabilities:[
         Capability.Play,
         Capability.Pause,

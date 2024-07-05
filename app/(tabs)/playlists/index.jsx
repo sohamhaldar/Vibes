@@ -2,7 +2,7 @@ import { View, Text,Pressable,TextInput,TouchableOpacity, ScrollView } from 'rea
 import React,{useState,useEffect} from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useActiveQueue, useQueue } from '../../../store/queue';
-import {Entypo,Ionicons,MaterialCommunityIcons} from '@expo/vector-icons';
+import {Ionicons,MaterialIcons} from '@expo/vector-icons';
 import colors from 'tailwindcss/colors';
 import TrackPlayer from 'react-native-track-player';
 import LongListItem from '../../../components/LongListItem';
@@ -46,6 +46,9 @@ const Playlist = () => {
     setPlaylistName('');
     setModalVisible(false)
   }
+  const removePlaylists=async(item)=>{
+    await removePlaylist(item.title);
+  }
   // test(); 
   
   return (
@@ -61,9 +64,14 @@ const Playlist = () => {
           <ScrollView>
             {playlists.map((item)=>{
                 return(
-                  <LongListItem key={item.title} item={item} onTrackSelect={onTrackSelect} isFav={false} onFavClick={onPlaylistClick} type='playlists' isSearch={false}/>
+                  <LongListItem key={item.title} item={item} onTrackSelect={onTrackSelect} isFav={false} onFavClick={onPlaylistClick} type='playlists' isSearch={false} removePlaylists={removePlaylists}/>
                 )
             })}
+            {playlists.length==0&&(<View className="w-full h-screen -top-32 justify-center items-center">
+              <MaterialIcons name="playlist-play" size={160} color={colors.slate[600]} />
+                <Text className="text-lg text-slate-600 mt-2">No Playlists available</Text>
+                <Text className="text-xl text-slate-600">Make Playlists to organise music</Text>
+              </View>)}
           </ScrollView>
         </View>
       </View>
