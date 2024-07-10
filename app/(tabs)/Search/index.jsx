@@ -1,4 +1,4 @@
-import { View, Text, TextInput, Pressable, FlatList,TouchableOpacity, ScrollView} from 'react-native'
+import { View, Text, TextInput, Pressable, FlatList,TouchableOpacity, ScrollView, Button} from 'react-native'
 import React, { useEffect, useMemo, useState } from 'react'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import {FontAwesome,MaterialCommunityIcons,Entypo,Ionicons} from '@expo/vector-icons'
@@ -32,6 +32,7 @@ const Search = () => {
   const{addToFavouriteQueue,favouriteQueue,removeFromFavouriteQueue,playlistQueue,addToPlaylist}=useQueue();
   const [isModalVisible, setModalVisible] = useState(false);
   const [isSearchModalVisible, setSearchModalVisible] = useState(false);
+  const [error,setError]=useState(null);
 
   const handleTrackSelect=async(videoId,name)=>{
     if(active=='songs'){
@@ -50,44 +51,72 @@ const Search = () => {
     setActive('songs');
     setLoading(true);
     if(search.length!=0){
-    const data=await searchSong('song');
-    setResult(data.data.music);
-    setLoading(false);}
+    try {
+        const data=await searchSong('song');
+        setResult(data.data.music);
+        setLoading(false);
+    } catch (error) {
+      console.log(error);
+    }
+  }
   }
   const artistsPress=async()=>{
     setActive('artists');
     setLoading(true);
     if(search.length!=0){
-    const data=await searchSong('artist');
-    setResult(data.data.music);
-    setLoading(false);}
+      try {
+        const data=await searchSong('artist');
+        setResult(data.data.music);
+        setLoading(false);
+      } catch (error) {
+        console.log(error);
+      }
+    }
   }
   const playlistsPress=async()=>{
     setActive('playlists');
     setLoading(true);
-    if(search.length!=0)
-    {const data=await searchSong('playlist');
-      setResult(data.data.music);
-    setLoading(false);}
+    if(search.length!=0){
+      try {
+        const data=await searchSong('playlist');
+        setResult(data.data.music);
+        setLoading(false);
+      } catch (error) {
+        console.log(error);
+      }
+    }
   }
   const albumsPress=async()=>{
     setActive('albums');
     setLoading(true);
-    if(search.length!=0)
-    {const data=await searchSong('album');
-      setResult(data.data.music);
-    setLoading(false);}
+    if(search.length!=0){
+      try {
+        const data=await searchSong('album');
+        setResult(data.data.music);
+        setLoading(false);
+      } catch (error) {
+        console.log(error);
+      }
+    }
   }
   const searchSong=async(type)=>{
     setIsInitialized(true);
     setLoading(true);
     if(search.length!=0)
     {
-      const result=await axios.post(`${baseUrl}/search`,{
-      type:type,
-      search:search
-    });
-    return result;
+      try {
+        setError(null);
+        const result=await axios.post(`${baseUrl}/search`,{
+        type:type,
+        search:search
+      });
+      return result;
+      } catch (error) {
+        let errorMsg;
+        errorMsg=error.toJSON().message;
+        error.toJSON().message?setError(errorMsg):setError('Some error occurred')
+        // console.log(error.config);
+      }
   }
   }
   const onSubmit=async()=>{
@@ -237,14 +266,20 @@ const Search = () => {
                 }
               })
               let isCurrent=false;
-              isCurrent=currentTrack?.videoId === item.videoId||currentTrack?.videoId === item.youtubeId
+              if(currentTrack){
+                if(currentTrack.videoId === item.videoId||currentTrack.videoId === item.youtubeId){
+                isCurrent=true;
+              }
+              }
+              
+              
               return (
               <LongListItem item={item} isCurrent={isCurrent} onAddToQueue={onAddToQueue} onTrackSelect={handleTrackSelect} onFavClick={onFavClick} type={active} isSearch={true} isFav={isFav} onPlaylistClick={onPlaylistClick} addedToQueue={isAdded}/>
             )
           }}
             contentContainerStyle={{paddingBottom:140}}
             />
-          </View>):isInitialized?(
+          </View>):isInitialized?error==null?(
             <View className="justify-center items-center w-full h-full">
               <Spinner
                 visible={true}
@@ -256,6 +291,21 @@ const Search = () => {
                 }}
               />
             </View>
+          ):(
+            <View className="justify-center items-center w-full h-full">
+                <View className="w-[70%] h-[22%] justify-center items-center -top-24 bg-slate-700 rounded-lg">
+                  <View className="h-[70%] w-full justify-center items-center">
+                    <Text className="text-red-400 text-center">{error}</Text>
+                  </View>
+                  <View style={{width: '100%', height: 1, backgroundColor: 'black'}} />
+                  <TouchableOpacity className="h-[30%] w-full justify-center items-center" onPress={onSubmit}>
+                  <View className="h-full w-full justify-center items-center ">
+                    <Text className="text-slate-100">Try Again</Text>
+                  </View>
+                  </TouchableOpacity>
+                </View>
+            </View>
+
           ):(
             <View className="justify-center items-center w-full h-full -top-36 ">
               <Entypo name="note" size={150} color={colors.slate[600]} />

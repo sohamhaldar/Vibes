@@ -101,7 +101,7 @@ const Player = () => {
             {/* <Text className="text-3xl text-slate-50 font-bold" ellipsizeMode="tail" numberOfLines={2}>{currentTrack?.title}</Text> */}
             <MovingText
                 text={currentTrack?.title}
-                animationThreshold={20} 
+                animationThreshold={16} 
                 className="text-3xl text-slate-50 font-bold"
             />
             <Text className="text-2xl text-slate-400 font-medium">{currentTrack?.artist}</Text>

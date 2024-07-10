@@ -15,39 +15,61 @@ const Home = () => {
   const [TopHitsGlobal,setTopHitsGlobal]=useState([]);
   const [TopHitsIndia,setTopHitsIndia]=useState([]);
   const [isLoading,setLoading]=useState(true);
-
+  const [error, setError] = useState(null);
 
   // const baseUrl='https://ytmusic-api-h2id.onrender.com';
   const baseUrl='http://localhost:8000';
-  const TopHitsGlobalReq=axios.get(`https://yt.lemnoslife.com/playlistItems?part=snippet&playlistId=PL4fGSI1pDJn5kI81J1fYWK5eZRl1zJ5kM`)
-  const TopHitsIndiaReq=axios.get(`https://yt.lemnoslife.com/playlistItems?part=snippet&playlistId=PL4fGSI1pDJn40WjZ6utkIuj2rNg-7iGsq`)
-  const PopHitsReq=axios.get(`https://yt.lemnoslife.com/playlistItems?part=snippet&playlistId=RDCLAK5uy_nSq67AJ2d75MFNJ3j_4ClEtSgC-opBM84`)
-  const SweetheartPopReq=axios.get(`https://yt.lemnoslife.com/playlistItems?part=snippet&playlistId=RDCLAK5uy_l1oO11DBO4FD8U7bOrqUKK5Y_PkISUMQM`)
-  const PopCertifiedReq=axios.get(`https://yt.lemnoslife.com/playlistItems?part=snippet&playlistId=RDCLAK5uy_lBNUteBRencHzKelu5iDHwLF6mYqjL-JU`)
-  const PopBiggestHitsReq=axios.get(`https://yt.lemnoslife.com/playlistItems?part=snippet&playlistId=RDCLAK5uy_nmS3YoxSwVVQk9lEQJ0UX4ZCjXsW_psU8`)
-  const call=async()=>{ 
-    const d=await axios.post(`${baseUrl}/trending`,{
-      option:"SweetheartPop"
-    })
-    console.log(d);
-  }
+  const TopHitsGlobalReq=axios.get(`https://yt.lemnoslife.com/noKey/playlistItems?part=snippet&playlistId=PL4fGSI1pDJn5kI81J1fYWK5eZRl1zJ5kM&maxResults=50`)
+  const TopHitsIndiaReq=axios.get(`https://yt.lemnoslife.com/noKey/playlistItems?part=snippet&playlistId=PL4fGSI1pDJn40WjZ6utkIuj2rNg-7iGsq&maxResults=50`)
+  const PopHitsReq=axios.get(`https://yt.lemnoslife.com/noKey/playlistItems?part=snippet&playlistId=RDCLAK5uy_nSq67AJ2d75MFNJ3j_4ClEtSgC-opBM84&maxResults=50`)
+  const SweetheartPopReq=axios.get(`https://yt.lemnoslife.com/noKey/playlistItems?part=snippet&playlistId=RDCLAK5uy_l1oO11DBO4FD8U7bOrqUKK5Y_PkISUMQM&maxResults=50`)
+  const PopCertifiedReq=axios.get(`https://yt.lemnoslife.com/noKey/playlistItems?part=snippet&playlistId=RDCLAK5uy_lBNUteBRencHzKelu5iDHwLF6mYqjL-JU&maxResults=50`)
+  const PopBiggestHitsReq=axios.get(`https://yt.lemnoslife.com/noKey/playlistItems?part=snippet&playlistId=RDCLAK5uy_nmS3YoxSwVVQk9lEQJ0UX4ZCjXsW_psU8&maxResults=50`)
+  
 
-  useEffect(()=>{
-    setLoading(true);
-    axios.all([PopHitsReq,PopBiggestHitsReq,PopCertifiedReq,SweetheartPopReq,TopHitsGlobalReq,TopHitsIndiaReq]).then(axios.spread((...responses)=>{
-      // console.log('POPHITS: ',responses[0].data[0]);
-      setPopHits(responses[0].data.items);
-      setPopBiggestHits(responses[1].data.items);
-      setPopCertified(responses[2].data.items);
-      setSweetheartPop(responses[3].data.items);
-      setTopHitsGlobal(responses[4].data.items);
-      setTopHitsIndia(responses[5].data.items);
+  // useEffect(()=>{
+  //   setLoading(true);
+    
+  //   axios.all([PopHitsReq,PopBiggestHitsReq,PopCertifiedReq,SweetheartPopReq,TopHitsGlobalReq,TopHitsIndiaReq]).then(axios.spread((...responses)=>{
+  //     // console.log('POPHITS: ',responses[0].data[0]);
+  //     setPopHits(responses[0].data.items);
+  //     setPopBiggestHits(responses[1].data.items);
+  //     setPopCertified(responses[2].data.items);
+  //     setSweetheartPop(responses[3].data.items);
+  //     setTopHitsGlobal(responses[4].data.items);
+  //     setTopHitsIndia(responses[5].data.items);
 
     
-      setLoading(false);
-    })).catch((e)=>console.log(e))
-  },[])
+  //     setLoading(false);
+  //   })).catch((e)=>console.log(e))
+  // },[])
   
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    axios
+      .all([PopHitsReq, PopBiggestHitsReq, PopCertifiedReq, SweetheartPopReq, TopHitsGlobalReq, TopHitsIndiaReq])
+      .then(
+        axios.spread((...responses) => {
+          try {
+            
+            setPopHits(responses[0].data.items || []);
+            setPopBiggestHits(responses[1].data.items || []);
+            setPopCertified(responses[2].data.items || []);
+            setSweetheartPop(responses[3].data.items || []);
+            setTopHitsGlobal(responses[4].data.items || []);
+            setTopHitsIndia(responses[5].data.items || []);
+          } catch (e) {
+            setError('Failed to parse response data');
+          }
+          setLoading(false);
+        })
+      )
+      .catch((e) => {
+        setError(e.message || 'An error occurred while fetching data');
+        setLoading(false);
+      });
+  }, []);
   return (
     <SafeAreaView className="flex-1 bg-slate-900 justify-center items-center">
       <StatusBar/>

@@ -8,7 +8,7 @@ import { baseUrl } from '../constants/base';
 // Active Queue Store
 export const useActiveQueueStore = create(
     persist(
-        (set) => ({
+        (set, get) => ({
             activeQueueId: null,
             activeQueue: [],
             setActiveQueueId: (id) => set({ activeQueueId: id }),
@@ -28,27 +28,27 @@ export const useActiveQueueStore = create(
             },
             setActiveQueue: async (Queue, index) => {
                 console.log('found the queue');
-                if (index) {
+                if (index !== undefined) {
                     console.log('entered custom');
                     const before = Queue.slice(0, index);
                     const selected = Queue.slice(index, index + 1);
                     let after;
-                    if(Queue.length-1>index){
+                    if (Queue.length - 1 > index) {
                         after = Queue.slice(index + 1);
                     }
-                    
+
                     console.log('fav: ', selected);
-                    let newQueue=[...selected,...before];
-                    if(Queue.length-1>index){
-                        newQueue = [...selected,...after, ...before];
+                    let newQueue = [...selected, ...before];
+                    if (Queue.length - 1 > index) {
+                        newQueue = [...selected, ...after, ...before];
                     }
                     set({ activeQueue: newQueue });
                     await TrackPlayer.reset();
                     await TrackPlayer.add(selected);
-                    if(Queue.length-1>index){
+                    if (Queue.length - 1 > index) {
                         await TrackPlayer.add(after);
                     }
-                    
+
                     await TrackPlayer.add(before);
 
                     await TrackPlayer.play();
@@ -94,7 +94,7 @@ export const useActiveQueue = () => useActiveQueueStore((state) => ({
 // Queue Store
 export const useQueueStore = create(
     persist(
-        (set) => ({
+        (set, get) => ({
             favouriteQueue: [],
             favouriteQueueId: 'favourites',
             playlistQueue: {},
@@ -127,74 +127,84 @@ export const useQueueStore = create(
                 set((state) => ({
                     favouriteQueue: [...state.favouriteQueue, song]
                 }));
-                await TrackPlayer.add(song);
-            },
-            removeFromFavouriteQueue: async (videoId, isFavPlaying) => {
-                let music;
-                set((state) => ({
-                    favouriteQueue: state.favouriteQueue.filter((song) => {
-                        if (song.videoId !== videoId) {
-                            music = song;
-                            return song;
-                        }
-                    })
-                }));
-                if (isFavPlaying) {
-                    const TrackId = await (await TrackPlayer.getQueue()).findIndex((i) => i.videoId == videoId);
-                    TrackPlayer.remove(TrackId);
+                const activeQueueId = useActiveQueueStore.getState().activeQueueId;
+                if (activeQueueId === 'favourites') {
+                    await useActiveQueueStore.getState().addToActiveQueue(song);
                 }
             },
-            addPlaylist: async (playlistName) => {
+            removeFromFavouriteQueue: async (videoId) => {
+                set((state) => ({
+                    favouriteQueue: state.favouriteQueue.filter((song) => song.videoId !== videoId)
+                }));
+                const activeQueueId = useActiveQueueStore.getState().activeQueueId;
+                if (activeQueueId === 'favourites') {
+                    const song = useActiveQueueStore.getState().activeQueue.find((song) => song.videoId === videoId);
+                    if (song) {
+                        await useActiveQueueStore.getState().removeFromActiveQueue(song);
+                    }
+                }
+            },
+            addPlaylist: (playlistName) => {
                 set((state) => ({
                     playlistQueue: { ...state.playlistQueue, [playlistName]: [] }
                 }));
             },
             addToPlaylist: async (playlistName, track) => {
-                set((state) => {
-                    const Queue = state.playlistQueue[playlistName] || [];
-                    let song;
-                    if (track.youtubeId) {
-                        let author;
-                        let artistId;
-                        if (Array.isArray(track.artists)) {
-                            author = track.artists.map(i => i.name).join(', ');
-                            artistId = track.artists.map(i => i.id).join(', ');
-                        } else {
-                            author = track.artists?.name || '';
-                        }
-                        song = {
-                            url: `${baseUrl}/${track.youtubeId}`,
-                            title: track.title,
-                            artist: author,
-                            duration: track.duration.totalSeconds,
-                            artwork: track.thumbnailUrl,
-                            headers: {
-                                "range": "bytes=0-"
-                            },
-                            artistId: artistId,
-                            videoId: track.youtubeId
-                        };
+                const state = get();
+                const Queue = state.playlistQueue[playlistName] || [];
+                let song;
+                if (track.youtubeId) {
+                    let author;
+                    let artistId;
+                    if (Array.isArray(track.artists)) {
+                        author = track.artists.map(i => i.name).join(', ');
+                        artistId = track.artists.map(i => i.id).join(', ');
                     } else {
-                        song = track;
+                        author = track.artists?.name || '';
                     }
-                    return {
-                        playlistQueue: { ...state.playlistQueue, [playlistName]: [...Queue, song] }
+                    song = {
+                        url: `${baseUrl}/play/${track.youtubeId}`,
+                        title: track.title,
+                        artist: author,
+                        duration: track.duration.totalSeconds,
+                        artwork: track.thumbnailUrl,
+                        headers: {
+                            "range": "bytes=0-"
+                        },
+                        artistId: artistId,
+                        videoId: track.youtubeId
                     };
-                });
+                } else {
+                    song = track;
+                }
+                if (useActiveQueueStore.getState().activeQueueId === `playlist-${playlistName}`) {
+                    await useActiveQueueStore.getState().addToActiveQueue(song);
+                    await TrackPlayer.add(song);
+                }
+                set((state) => ({
+                    playlistQueue: { ...state.playlistQueue, [playlistName]: [...Queue, song] }
+                }));
             },
             removeFromPlaylist: async (playlistName, track) => {
-                set((state) => {
-                    const Queue = state.playlistQueue[playlistName];
-                    if (!Queue) return;
-                    return {
-                        playlistQueue: {
-                            ...state.playlistQueue,
-                            [playlistName]: Queue.filter((song) => song.videoId !== track.videoId)
-                        }
-                    };
-                });
+                const state = get();
+                const Queue = state.playlistQueue[playlistName];
+                if (!Queue) return;
+                const activeQueueId = useActiveQueueStore.getState().activeQueueId;
+                if (activeQueueId === `playlist-${playlistName}`) {
+                    const songIndex = useActiveQueueStore.getState().activeQueue.findIndex((song) => song.videoId === track.videoId);
+                    if (songIndex !== -1) {
+                        await useActiveQueueStore.getState().removeFromActiveQueue(track);
+                        await TrackPlayer.remove(songIndex);
+                    }
+                }
+                set((state) => ({
+                    playlistQueue: {
+                        ...state.playlistQueue,
+                        [playlistName]: Queue.filter((song) => song.videoId !== track.videoId)
+                    }
+                }));
             },
-            removePlaylist: async (playlistName) => {
+            removePlaylist: (playlistName) => {
                 set((state) => {
                     const playlists = { ...state.playlistQueue };
                     delete playlists[playlistName];

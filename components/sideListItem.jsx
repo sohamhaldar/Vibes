@@ -51,6 +51,13 @@ const SideListItem = ({ item,onTrackSelect}) => {
     //         }
     //     }
     // }
+    // if(item!=-1) console.log(item.snippet.thumbnails["maxres"||"default"].url);
+    let thumbnailUrl;
+    if(item!=-1) thumbnailUrl =
+        item.snippet.thumbnails?.maxres?.url ||
+        item.snippet.thumbnails?.high?.url ||
+        item.snippet.thumbnails?.medium?.url ||
+        item.snippet.thumbnails?.default?.url;
     const onclick=()=>{
         console.log('clicked',item);
         console.log('id:',item.snippet.resourceId.videoId)
@@ -71,7 +78,7 @@ const SideListItem = ({ item,onTrackSelect}) => {
         <TouchableOpacity onPress={onclick}>
             <View className="h-52 justify-between top-2 w-44 rounded-lg overflow-hidden m-2">
                 <Image
-                    source={{ uri: item.snippet.thumbnails[item.snippet.thumbnails.length-1].url }}
+                    source={{ uri: thumbnailUrl }}
                     resizeMode="stretch"
                     className="h-36 w-full bg-white"
                 />

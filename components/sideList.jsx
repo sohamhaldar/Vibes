@@ -8,7 +8,7 @@ import { useActiveQueue } from '../store/queue';
 
 const SideList = ({songs,isLoading,listType}) => {
   const{setActiveQueue}=useActiveQueue();
-  console.log(songs[0])
+  // console.log(songs[0])
   const RenderMe=listType==1?SideListItem:SideListItem2;
   const handleTrackSelect=async(videoId)=>{
     const data=await HandlePlay(videoId);

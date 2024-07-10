@@ -1,7 +1,8 @@
 import { View, Text } from 'react-native'
 import React from 'react';
 import TrackPlayer,{Event, RepeatMode, Capability,AppKilledPlaybackBehavior} from 'react-native-track-player';
-
+import Vibes from '../assets/icon_notification.png'
+import colors from 'tailwindcss/colors';
 
 export const setUpPlayer=async()=>{
   let isSetup=false;
@@ -38,7 +39,13 @@ export const setUpPlayer=async()=>{
         Capability.SkipToNext,
         Capability.SkipToPrevious,
         Capability.SeekTo
-      ]
+      ],
+      icon:Vibes,
+      likeOptions:{
+
+      },
+
+      color:colors.blue[950]
     })
     await TrackPlayer.setRepeatMode(RepeatMode.Queue)
     await TrackPlayer.setVolume(0.8);
@@ -62,10 +69,15 @@ const MusicService = async() => {
     await TrackPlayer.addEventListener(Event.RemoteNext,()=>{
       TrackPlayer.skipToNext();
     })
-    TrackPlayer.addEventListener(Event.RemotePrevious,()=>{
+    await TrackPlayer.addEventListener(Event.RemoteSeek,async({position})=>{
+      // console.log('Seeking',position);
+      await TrackPlayer.seekTo(position);
+    })
+    await TrackPlayer.addEventListener(Event.RemotePrevious,()=>{
       TrackPlayer.skipToPrevious();
     })
-    TrackPlayer.addEventListener(Event.RemoteStop,()=>{
+
+    await TrackPlayer.addEventListener(Event.RemoteStop,()=>{
       TrackPlayer.stop();
     })
   } catch (error) {
