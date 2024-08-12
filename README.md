@@ -7,11 +7,11 @@ Welcome to Vibes, the ultimate music streaming app designed for music lovers who
 
 
 ## Table of contents
-- [Features](#features)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Screenshots](#screenshots)
-- [License](#license)
+- [Features](#features-)
+- [Installation](#installation-%EF%B8%8F)
+- [Usage](#usage-)
+- [Screenshots](#screenshots-)
+- [License](#license-)
 
 ## Features ✨
 
